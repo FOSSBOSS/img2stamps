@@ -29,3 +29,9 @@ Done. Output written to: output.scad
 when you are satisfied, export you scad file to stl or whatever, to 3D print it. 
 
 <pre>
+
+<img src="https://github.com/FOSSBOSS/img2stamps/blob/main/imgs/aaa.png">
+<br>
+same image inverted:
+<br>
+<img src="https://github.com/FOSSBOSS/img2stamps/blob/main/imgs/bb.png">
