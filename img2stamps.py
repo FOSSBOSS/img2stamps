@@ -9,11 +9,28 @@ from PIL import Image, ImageTk
 import numpy as np
 from time import sleep
 
+# Todo features:
+'''
+use basename of input filename as basename.scad
+
+-b option to print both image and inverted image.
+translate by width + 3mm
+or get really clever and determine whether height or width is shorter, 
+and use the shorter side + 3mm as the offset. 
+
+I did  it at hoome, but I forget what I did exactly. 
+open a blank output file in openscad before creating the file. ...
+this avoids the bug we found in openscad.
+
+add a bulk processor
+
+'''
+
 DEFAULT_IMAGE = "t.png"
 OUTPUT_SCAD = "output.scad"
 PIXEL_SIZE = 1
-MAX_HEIGHT_DEFAULT = 10.0
-DOWNSCALE = 3
+MAX_HEIGHT_DEFAULT = 40.0
+DOWNSCALE = 1
 
 
 def generate_scad(image_array, output_path, pixel_size, max_height, threshold=3):
@@ -123,9 +140,13 @@ def main():
 
     if not os.path.isfile(INPUT_IMAGE):
         print(f"Usage: {sys.argv[0]} [-c] [-n] [imagefile.png]")
-        print("  -c : Capture from camera")
+	print("  -B : Bulk process images")
+        print("  -b : print BOTH print a matched pair: inverted and non inverted models")        
+	print("  -c : Capture from camera")
         print("  -n : Invert highs and lows")
         print(f"  Default file '{DEFAULT_IMAGE}' not found." if INPUT_IMAGE == DEFAULT_IMAGE else f"  File '{INPUT_IMAGE}' not found.")
+	print(f"{sys.argv[0]} Works best on high contrast, or black and white images.")
+	print("Images over 600x480 px may take an exceeding long time to process and render.")
         sys.exit(1)
 
     img = Image.open(INPUT_IMAGE).convert("L")
