@@ -9,29 +9,23 @@ from PIL import Image, ImageTk
 import numpy as np
 from time import sleep
 
-# Todo features:
-'''
-use basename of input filename as basename.scad
 
--b option to print both image and inverted image.
-translate by width + 3mm
-or get really clever and determine whether height or width is shorter, 
-and use the shorter side + 3mm as the offset. 
-
-I did  it at hoome, but I forget what I did exactly. 
-open a blank output file in openscad before creating the file. ...
-this avoids the bug we found in openscad.
-
-add a bulk processor
-
-'''
 
 DEFAULT_IMAGE = "t.png"
 OUTPUT_SCAD = "output.scad"
 PIXEL_SIZE = 1
-MAX_HEIGHT_DEFAULT = 40.0
+MAX_HEIGHT_DEFAULT = 60.0
 DOWNSCALE = 1
+def auto_scaling():
+    print("lol u wish")
 
+def wranings(width, height):
+    if width * height > 307200:
+        print(f"\nWARNING: Image size is {width * height} pixels, which exceeds the recommended limit of 307200 pixels.")
+        print("Images over 600x480 px may take an exceeding long time to process and render.")
+    
+    # if output file is over 30MB
+    
 
 def generate_scad(image_array, output_path, pixel_size, max_height, threshold=3):
     data = image_array[::DOWNSCALE, ::DOWNSCALE]
@@ -51,7 +45,7 @@ def generate_scad(image_array, output_path, pixel_size, max_height, threshold=3)
                     f.write(f"  translate([{x * pixel_size}, {y * pixel_size}, 0])\n")
                     f.write(f"    cube([{pixel_size}, {pixel_size}, {h:.2f}]);\n")
         f.write("}\n")
-        f.write(f"color(\"white\")\n  cube([{cols * pixel_size}, {rows * pixel_size}, 3]);\n")
+        f.write(f"color(\"white\")\n  cube([{cols * pixel_size}, {rows * pixel_size}, 1]);\n")
     print(f"Done. Output written to: {output_path}")
 
 def generate_negative_scad(image_array, output_path, pixel_size, max_height, threshold=3):
@@ -128,6 +122,8 @@ def main():
     args = sys.argv[1:]
     use_camera = "-c" in args
     use_negative = "-n" in args
+    #use_both = "-b" in args
+    #use_all = "-a" in args 
 
     if use_camera:
         camera_capture_gui()
@@ -139,25 +135,34 @@ def main():
             INPUT_IMAGE = arg
 
     if not os.path.isfile(INPUT_IMAGE):
-        print(f"Usage: {sys.argv[0]} [-c] [-n] [imagefile.png]")
-	print("  -B : Bulk process images")
+        print(f"Usage: {sys.argv[0]} [-a] [-b] [-c] [-n] [imagefile.png]")
+        print("  -a : process ALL images to scad files")
         print("  -b : print BOTH print a matched pair: inverted and non inverted models")        
-	print("  -c : Capture from camera")
+        print("  -c : Capture from camera")
         print("  -n : Invert highs and lows")
         print(f"  Default file '{DEFAULT_IMAGE}' not found." if INPUT_IMAGE == DEFAULT_IMAGE else f"  File '{INPUT_IMAGE}' not found.")
-	print(f"{sys.argv[0]} Works best on high contrast, or black and white images.")
-	print("Images over 600x480 px may take an exceeding long time to process and render.")
+        print(f"{sys.argv[0]} Works best on high contrast, or black and white images.")
+        
         sys.exit(1)
 
     img = Image.open(INPUT_IMAGE).convert("L")
     width, height = img.size
+    warnings(width,height)
     print(f"Original image size: {width} x {height}")
     data = np.array(img)
 
+    base_name = os.path.splitext(os.path.basename(INPUT_IMAGE))[0]
+    output_file = base_name + ".scad"
+    #if use_both:
+	#generate_negative_scad(data, output_file, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
+        # find out if with or height is lower. translate generate_scad by min dimension, + 3 	
+	#generate_scad(data, output_file, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
+
     if use_negative:
-        generate_negative_scad(data, OUTPUT_SCAD, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
+        generate_negative_scad(data, output_file, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
     else:
-        generate_scad(data, OUTPUT_SCAD, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
+        generate_scad(data, output_file, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
+
 
 
 if __name__ == "__main__":
