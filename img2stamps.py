@@ -9,8 +9,6 @@ from PIL import Image, ImageTk
 import numpy as np
 from time import sleep
 
-
-
 DEFAULT_IMAGE = "t.png"
 OUTPUT_SCAD = "output.scad"
 PIXEL_SIZE = 1
@@ -23,9 +21,54 @@ def wranings(width, height):
     if width * height > 307200:
         print(f"\nWARNING: Image size is {width * height} pixels, which exceeds the recommended limit of 307200 pixels.")
         print("Images over 600x480 px may take an exceeding long time to process and render.")
-    
+    # last thing I want to see in a batch proccess in a bunch of warnings.
     # if output file is over 30MB
+
+def batch_process():
+    # Pillow supports more than this, but these are the most common ones I'll encounter
+    supported_exts = ('.png', '.bmp', '.jpg', '.jpeg')
+    image_files = [f for f in os.listdir('.') if f.lower().endswith(supported_exts)]
+
+    if not image_files:
+        print("No supported image files found in current directory.")
+        return
+
+    os.makedirs("scad_output", exist_ok=True)
+
+    for image_file in image_files:
+        print(f"Processing {image_file}...")
+        try:
+            img = Image.open(image_file).convert("L")
+            data = np.array(img)
+            base_name = os.path.splitext(os.path.basename(image_file))[0]
+            output_path = os.path.join("scad_output", base_name + ".scad")
+            generate_scad(data, output_path, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
+        except Exception as e:
+            print(f"Error processing {image_file}: {e}")
     
+def batch_neg_process():
+    # Pillow supports more than this, but these are the most common ones I'll encounter
+    supported_exts = ('.png', '.bmp', '.jpg', '.jpeg')
+    image_files = [f for f in os.listdir('.') if f.lower().endswith(supported_exts)]
+
+    if not image_files:
+        print("No supported image files found in current directory.")
+        return
+
+    os.makedirs("scad_output", exist_ok=True)
+
+    for image_file in image_files:
+        print(f"Processing {image_file}...")
+        try:
+            img = Image.open(image_file).convert("L")
+            data = np.array(img)
+            base_name = os.path.splitext(os.path.basename(image_file))[0]
+            output_path = os.path.join("scad_output", base_name + "_negative.scad")
+            generate_negative_scad(data, output_path, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
+        except Exception as e:
+            print(f"Error processing {image_file}: {e}")
+    
+
 
 def generate_scad(image_array, output_path, pixel_size, max_height, threshold=3):
     data = image_array[::DOWNSCALE, ::DOWNSCALE]
@@ -123,11 +166,25 @@ def main():
     use_camera = "-c" in args
     use_negative = "-n" in args
     #use_both = "-b" in args
-    #use_all = "-a" in args 
+    scale = "-s" in args
+    use_all = "-a" in args 
+    invert_all = "-an" in args # invert all.... wish u figured out the both thing now hunh  
 
     if use_camera:
         camera_capture_gui()
         return
+
+    if scale:
+	auto_scaling()
+	return
+
+    if use_all:
+        batch_process()
+        return
+   
+    if invert_all:
+        batch_neg_process()
+        return          
 
     INPUT_IMAGE = DEFAULT_IMAGE
     for arg in args:
@@ -135,11 +192,14 @@ def main():
             INPUT_IMAGE = arg
 
     if not os.path.isfile(INPUT_IMAGE):
-        print(f"Usage: {sys.argv[0]} [-a] [-b] [-c] [-n] [imagefile.png]")
+        print(f"Usage: {sys.argv[0]} [-a] [-an] [-b] [-c] [-n] [-t] [imagefile.png]")
         print("  -a : process ALL images to scad files")
+        print(" -an : process ALL images as negatives to scad files")
         print("  -b : print BOTH print a matched pair: inverted and non inverted models")        
         print("  -c : Capture from camera")
         print("  -n : Invert highs and lows")
+        print("  -s XxY : Auto Scale to specifed size")
+        print("  -t : Change detection threshold: defualt 3")
         print(f"  Default file '{DEFAULT_IMAGE}' not found." if INPUT_IMAGE == DEFAULT_IMAGE else f"  File '{INPUT_IMAGE}' not found.")
         print(f"{sys.argv[0]} Works best on high contrast, or black and white images.")
         
@@ -153,10 +213,10 @@ def main():
 
     base_name = os.path.splitext(os.path.basename(INPUT_IMAGE))[0]
     output_file = base_name + ".scad"
-    #if use_both:
-	#generate_negative_scad(data, output_file, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
-        # find out if with or height is lower. translate generate_scad by min dimension, + 3 	
-	#generate_scad(data, output_file, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
+    #if make_both:
+        #generate_negative_scad(data, output_file, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
+        # find out if with or height is lower. translate generate_scad by min dimension, + 3    
+        #generate_scad(data, output_file, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
 
     if use_negative:
         generate_negative_scad(data, output_file, PIXEL_SIZE, MAX_HEIGHT_DEFAULT)
@@ -167,3 +227,17 @@ def main():
 
 if __name__ == "__main__":
     main()
+# Todo features:
+'''
+figure out the both thing.
+add a detction threshhold scaling flag. 
+add an option to output a standard size ...
+    but for that I think I want to figure out more about auto scaling.
+    when I use the makerspace 4K display, my images are huge. when I use my home PC, the images are smaller.
+    I think this has to do with DPI, though the relationship between px, DPI, and resolution, to phyiscial size 
+    is not apparrent to me. The 3D printer I'll be exporting to, is a constant size though. 
+    
+    Another thing I should figure out is if I can use openscad to build the stl files, without opening openscad. 
+    a -rstl or -render all scads to stl might be neat if its not too much chaos to implement.
+
+'''
