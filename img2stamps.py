@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 import os
 import cv2
@@ -8,6 +7,12 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import numpy as np
 from time import sleep
+'''
+On your favorite debian based linux distro, such as MINT:
+sudo apt update
+sudo apt install -y python3-pip python3-tk && pip install opencv-python pillow numpy
+
+'''
 
 DEFAULT_IMAGE = "t.png"
 OUTPUT_SCAD = "output.scad"
@@ -17,7 +22,7 @@ DOWNSCALE = 1
 def auto_scaling():
     print("lol u wish")
 
-def wranings(width, height):
+def warnings(width, height):
     if width * height > 307200:
         print(f"\nWARNING: Image size is {width * height} pixels, which exceeds the recommended limit of 307200 pixels.")
         print("Images over 600x480 px may take an exceeding long time to process and render.")
@@ -175,8 +180,8 @@ def main():
         return
 
     if scale:
-	auto_scaling()
-	return
+	    auto_scaling()
+	    return
 
     if use_all:
         batch_process()
@@ -241,3 +246,4 @@ add an option to output a standard size ...
     a -rstl or -render all scads to stl might be neat if its not too much chaos to implement.
 
 '''
+
